@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataCleanse - 智能数据清洗工具</title>
+<style>
+  /* ===== Reset & Base ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: #f5f6f8;
+    color: #1a1a2e;
+    min-height: 100vh;
+  }
+
+  /* ===== Layout ===== */
+  .app-header {
+    background: #fff;
+    border-bottom: 1px solid #e0e3e8;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .app-header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a2e;
+  }
+  .app-header .sub {
+    font-size: 12px;
+    color: #888;
+    margin-left: auto;
+  }
+  .app-body {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 0;
+    height: calc(100vh - 52px);
+  }
+  @media (max-width: 768px) {
+    .app-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    background: #fff;
+    border-right: 1px solid #e0e3e8;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .sidebar-section {
+    border: 1px solid #e8eaed;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .sidebar-section-header {
+    background: #f8f9fa;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+  }
+  .sidebar-section-header:hover { background: #f0f1f3; }
+  .sidebar-section-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sidebar-section-body.hidden { display: none; }
+
+  label { font-size: 12px; font-weight: 500; color: #555; }
+  select, input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #d0d3d8;
+    border-radius: 4px;
+    font-size: 13px;
+    background: #fff;
+  }
+  select:focus, input:focus { outline: none; border-color: #4a6cf7; box-shadow: 0 0 0 2px rgba(74,108,247,0.12); }
+  .btn {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-primary { background: #4a6cf7; color: #fff; }
+  .btn-primary:hover { background: #3b5de7; }
+  .btn-primary:disabled { background: #a0b4f8; cursor: not-allowed; }
+  .btn-success { background: #10b981; color: #fff; }
+  .btn-success:hover { background: #059669; }
+  .btn-outline { background: transparent; color: #555; border: 1px solid #d0d3d8; }
+  .btn-outline:hover { background: #f5f6f8; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* ===== Main ===== */
+  .main-area {
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ===== Upload Zone ===== */
+  .upload-zone {
+    border: 2px dashed #d0d3d8;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fff;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: #4a6cf7;
+    background: #f0f4ff;
+  }
+  .upload-zone.has-data {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .upload-zone .icon { font-size: 32px; margin-bottom: 8px; color: #888; }
+  .upload-zone .text { font-size: 14px; color: #666; }
+  .upload-zone .hint { font-size: 12px; color: #aaa; margin-top: 4px; }
+
+  /* ===== Info Bar ===== */
+  .info-bar {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: #666;
+  }
+  .info-bar .stat { display: flex; align-items: center; gap: 4px; }
+  .info-bar .stat strong { color: #1a1a2e; }
+
+  /* ===== Table ===== */
+  .table-wrapper {
+    background: #fff;
+    border: 1px solid #e0e3e8;
+    border-radius: 6px;
+    overflow: auto;
+    flex: 1;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead { position: sticky; top: 0; z-index: 1; }
+  th {
+    background: #f8f9fa;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    color: #555;
+    border-bottom: 2px solid #e0e3e8;
+    white-space: nowrap;
+  }
+  td {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f0f1f3;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  tr:hover td { background: #f8f9ff; }
+  .null-cell { color: #ccc; font-style: italic; }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #fff;
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: all 0.25s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: #10b981; }
+  .toast.error { background: #ef4444; }
+
+  /* ===== Loading ===== */
+  .loading {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>DataCleanse</h1>
+  <span style="font-size:12px;color:#888;">数据清洗工具</span>
+  <span class="sub" id="fileInfo">未加载文件</span>
+</div>
+
+<div class="app-body">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="upload-zone" id="uploadZone">
+      <div id="uploadPrompt">
+        <div class="icon">📂</div>
+        <div class="text">拖拽文件到此处，或点击选择</div>
+        <div class="hint">支持 CSV、XLSX 格式</div>
+      </div>
+      <div id="uploadStatus" style="display:none;">
+        <span id="fileName" style="font-weight:500;"></span>
+        <button class="btn btn-outline btn-sm" onclick="resetUpload()">更换文件</button>
+      </div>
+    </div>
+    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none;">
+
+    <!-- Info bar -->
+    <div class="info-bar" id="infoBar" style="display:none;">
+      <span class="stat">行数: <strong id="rowCount">0</strong></span>
+      <span class="stat">列数: <strong id="colCount">0</strong></span>
+      <span class="stat">空值: <strong id="nullCount">0</strong></span>
+    </div>
+
+    <!-- Operations -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-header" onclick="toggleSection(this)">
+        <span>🔍 去重</span>
+        <span>▾</span>
+      </div>
+      <div class="sidebar-section-body">
+        <label>按列去重（留空为全列）</label>
+        <input type="text" id="dedupCols" placeholder="如: name, email">
+        <label>保留方式</label>
+        <select id="dedupKeep">
+          <option value="first">保留第一条</option>
+          <option value="last">保留最后一条</option>
+          <option value="false">全部删除</option>
+        </select>
+        <button class="btn btn-primary" onclick="runOperation('dedup')">执行去重</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-header" onclick="toggleSection(this)">
+        <span>📭 空值处理</span>
+        <span>▾</span>
+      </div>
+      <div class="sidebar-section-body">
+        <label>操作</label>
+        <select id="nullStrategy" onchange="toggleNullFill()">
+          <option value="drop_rows">删除含空值的行</option>
+          <option value="drop_cols">删除含空值的列</option>
+          <option value="fill_value">填充指定值</option>
+          <option value="fill_mean">填充均值（数值列）</option>
+          <option value="fill_median">填充中位数（数值列）</option>
+          <option value="fill_forward">向前填充</option>
+          <option value="fill_backward">向后填充</option>
+        </select>
+        <div id="nullFillGroup" style="display:none;">
+          <label>填充值</label>
+          <input type="text" id="nullFillValue" placeholder="如: 0 / N/A">
+        </div>
+        <label>限定列（留空为全部）</label>
+        <input type="text" id="nullCols" placeholder="如: age, salary">
+        <button class="btn btn-primary" onclick="runOperation('nulls')">执行空值处理</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-header" onclick="toggleSection(this)">
+        <span>🔄 类型转换</span>
+        <span>▾</span>
+      </div>
+      <div class="sidebar-section-body">
+        <label>列名</label>
+        <input type="text" id="convCol" placeholder="如: price">
+        <label>目标类型</label>
+        <select id="convType">
+          <option value="int">整数 (int)</option>
+          <option value="float">小数 (float)</option>
+          <option value="str">文本 (str)</option>
+          <option value="date">日期 (date)</option>
+          <option value="datetime">日期时间 (datetime)</option>
+        </select>
+        <button class="btn btn-primary" onclick="runConvert()">执行转换</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-header" onclick="toggleSection(this)">
+        <span>🔎 过滤</span>
+        <span>▾</span>
+      </div>
+      <div class="sidebar-section-body">
+        <label>列名</label>
+        <input type="text" id="filterCol" placeholder="如: status">
+        <label>条件</label>
+        <select id="filterOp">
+          <option value="==">等于 (==)</option>
+          <option value="!=">不等于 (!=)</option>
+          <option value=">">大于 (>)</option>
+          <option value="<">小于 (<)</option>
+          <option value=">=">大于等于 (>=)</option>
+          <option value="<=">小于等于 (<=)</option>
+          <option value="contains">包含</option>
+        </select>
+        <label>值</label>
+        <input type="text" id="filterVal" placeholder="如: active">
+        <button class="btn btn-primary" onclick="runFilter()">执行过滤</button>
+      </div>
+    </div>
+
+    <!-- Download -->
+    <div style="margin-top:auto;padding-top:12px;border-top:1px solid #e0e3e8;">
+      <div class="btn-group">
+        <button class="btn btn-success" id="downloadCsv" onclick="downloadFile('csv')" disabled>⬇ CSV 下载</button>
+        <button class="btn btn-success" id="downloadXlsx" onclick="downloadFile('xlsx')" disabled>⬇ Excel 下载</button>
+      </div>
+      <div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center;">
+        上传文件后即可下载清洗结果
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main-area">
+    <div class="table-wrapper" id="tableWrapper">
+      <div style="display:flex;align-items:center;justify-content:center;height:200px;color:#999;font-size:14px;">
+        请先上传 CSV 或 Excel 文件
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== State =====
+let sessionId = null;
+let fileName = null;
+
+// ===== Upload =====
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+
+uploadZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  uploadZone.classList.add('drag-over');
+});
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) handleFile(fileInput.files[0]);
+});
+
+async function handleFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['csv', 'xlsx', 'xls'].includes(ext)) {
+    showToast('不支持的文件格式，仅支持 CSV、XLSX', 'error');
+    return;
+  }
+  const form = new FormData();
+  form.append('file', file);
+  showToast('正在上传...');
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: form });
+    if (!res.ok) { showToast('上传失败: ' + (await res.text()), 'error'); return; }
+    const data = await res.json();
+    sessionId = data.session_id;
+    fileName = data.file_name;
+    document.getElementById('uploadPrompt').style.display = 'none';
+    document.getElementById('uploadStatus').style.display = 'flex';
+    document.getElementById('uploadStatus').style.alignItems = 'center';
+    document.getElementById('uploadStatus').style.gap = '8px';
+    document.getElementById('fileName').textContent = file.name;
+    uploadZone.classList.add('has-data');
+    renderPreview(data.preview);
+    document.getElementById('infoBar').style.display = 'flex';
+    document.getElementById('rowCount').textContent = data.preview.rows;
+    document.getElementById('colCount').textContent = data.preview.columns.length;
+    document.getElementById('nullCount').textContent = Object.values(data.preview.null_counts).reduce((a,b) => a + b, 0);
+    document.getElementById('fileInfo').textContent = file.name;
+    document.getElementById('downloadCsv').disabled = false;
+    document.getElementById('downloadXlsx').disabled = false;
+    showToast('上传成功！共 ' + data.preview.rows + ' 行', 'success');
+  } catch (e) {
+    showToast('网络错误: ' + e.message, 'error');
+  }
+}
+
+function resetUpload() {
+  sessionId = null;
+  fileName = null;
+  document.getElementById('uploadPrompt').style.display = '';
+  document.getElementById('uploadStatus').style.display = 'none';
+  uploadZone.classList.remove('has-data');
+  document.getElementById('infoBar').style.display = 'none';
+  document.getElementById('fileInfo').textContent = '未加载文件';
+  document.getElementById('downloadCsv').disabled = true;
+  document.getElementById('downloadXlsx').disabled = true;
+  fileInput.value = '';
+  document.querySelector('#tableWrapper > div').innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:center;height:200px;color:#999;font-size:14px;">请先上传 CSV 或 Excel 文件</div>';
+}
+
+// ===== Render Preview Table =====
+function renderPreview(preview) {
+  const wrapper = document.getElementById('tableWrapper');
+  const cols = preview.columns;
+  const rows = preview.preview;
+  let html = '<table><thead><tr>';
+  for (const c of cols) {
+    const dtype = preview.dtypes[c] || '';
+    html += '<th>' + escapeHtml(c) + '<br><span style="font-weight:400;font-size:10px;color:#999;">' + dtype + '</span></th>';
+  }
+  html += '</tr></thead><tbody>';
+  for (const row of rows) {
+    html += '<tr>';
+    for (const c of cols) {
+      let val = row[c];
+      if (val === '' || val === null || val === undefined) {
+        html += '<td class="null-cell">(空)</td>';
+      } else {
+        html += '<td title="' + escapeHtml(String(val)) + '">' + escapeHtml(String(val)) + '</td>';
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  wrapper.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ===== Operations =====
+async function runOperation(op) {
+  if (!sessionId) { showToast('请先上传文件', 'error'); return; }
+  const form = new URLSearchParams();
+  form.append('operation', op);
+  if (op === 'dedup') {
+    form.append('columns', document.getElementById('dedupCols').value);
+    form.append('keep', document.getElementById('dedupKeep').value);
+  } else if (op === 'nulls') {
+    form.append('strategy', document.getElementById('nullStrategy').value);
+    form.append('fill_value', document.getElementById('nullFillValue').value);
+    form.append('columns', document.getElementById('nullCols').value);
+  }
+  showToast('正在处理...');
+  try {
+    const res = await fetch('/api/clean/' + sessionId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form
+    });
+    if (!res.ok) { showToast('操作失败: ' + (await res.text()), 'error'); return; }
+    const data = await res.json();
+    renderPreview(data);
+    document.getElementById('rowCount').textContent = data.rows;
+    document.getElementById('nullCount').textContent = Object.values(data.null_counts).reduce((a,b) => a + b, 0);
+    showToast('操作完成！剩余 ' + data.rows + ' 行', 'success');
+  } catch (e) {
+    showToast('网络错误: ' + e.message, 'error');
+  }
+}
+
+async function runConvert() {
+  if (!sessionId) { showToast('请先上传文件', 'error'); return; }
+  const col = document.getElementById('convCol').value.trim();
+  if (!col) { showToast('请输入列名', 'error'); return; }
+  const conversions = {};
+  conversions[col] = document.getElementById('convType').value;
+  const form = new URLSearchParams();
+  form.append('operation', 'convert');
+  form.append('conversions', JSON.stringify(conversions));
+  showToast('正在转换...');
+  try {
+    const res = await fetch('/api/clean/' + sessionId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form
+    });
+    if (!res.ok) { showToast('转换失败: ' + (await res.text()), 'error'); return; }
+    const data = await res.json();
+    renderPreview(data);
+    showToast('转换完成！', 'success');
+  } catch (e) {
+    showToast('网络错误: ' + e.message, 'error');
+  }
+}
+
+async function runFilter() {
+  if (!sessionId) { showToast('请先上传文件', 'error'); return; }
+  const col = document.getElementById('filterCol').value.trim();
+  if (!col) { showToast('请输入列名', 'error'); return; }
+  const form = new URLSearchParams();
+  form.append('operation', 'filter');
+  form.append('columns', col);
+  form.append('operator', document.getElementById('filterOp').value);
+  form.append('value', document.getElementById('filterVal').value);
+  showToast('正在过滤...');
+  try {
+    const res = await fetch('/api/clean/' + sessionId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form
+    });
+    if (!res.ok) { showToast('过滤失败: ' + (await res.text()), 'error'); return; }
+    const data = await res.json();
+    renderPreview(data);
+    document.getElementById('rowCount').textContent = data.rows;
+    showToast('过滤完成！剩余 ' + data.rows + ' 行', 'success');
+  } catch (e) {
+    showToast('网络错误: ' + e.message, 'error');
+  }
+}
+
+// ===== Download =====
+async function downloadFile(fmt) {
+  if (!sessionId) { showToast('请先上传文件', 'error'); return; }
+  try {
+    var url = '/api/download/' + sessionId + '?fmt=' + fmt;
+    var res = await fetch(url);
+    if (!res.ok) { showToast('下载失败: ' + res.status, 'error'); return; }
+    var blob = await res.blob();
+    var ext = fmt === 'csv' ? '.csv' : '.xlsx';
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName ? fileName.replace(/\.[^.]+$/, ext) : ('cleaned_data' + ext);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(a.href); }, 5000);
+    showToast('下载成功！', 'success');
+  } catch (e) {
+    showToast('下载失败: ' + e.message, 'error');
+  }
+}
+
+// ===== UI Helpers =====
+function toggleSection(header) {
+  const body = header.nextElementSibling;
+  body.classList.toggle('hidden');
+  const arrow = header.querySelector('span:last-child');
+  arrow.textContent = body.classList.contains('hidden') ? '▸' : '▾';
+}
+
+function toggleNullFill() {
+  const strat = document.getElementById('nullStrategy').value;
+  document.getElementById('nullFillGroup').style.display = strat === 'fill_value' ? 'block' : 'none';
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (type || '');
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
