@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Excel 全能助手 - 数据清洗 · 公式编写 · VBA宏 · 报表模板</title>
+<!-- SheetJS for Excel processing -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: #f5f6f8;
+    color: #1a1a2e;
+    min-height: 100vh;
+  }
+  .app-header {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .app-header h1 { font-size: 18px; font-weight: 600; }
+  .app-header .badge {
+    background: #e94560;
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .app-header .sub { font-size: 12px; color: #888; margin-left: auto; }
+
+  .service-bar {
+    background: #fff;
+    border-bottom: 1px solid #e0e3e8;
+    padding: 12px 24px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: #666;
+  }
+  .service-bar .tag {
+    background: #f0f4ff;
+    color: #4a6cf7;
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+  }
+
+  .app-body {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 0;
+    height: calc(100vh - 88px);
+  }
+  @media (max-width: 768px) {
+    .app-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  }
+
+  .sidebar {
+    background: #fff;
+    border-right: 1px solid #e0e3e8;
+    padding: 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sidebar .nav-item {
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+  }
+  .sidebar .nav-item:hover { background: #f5f6f8; color: #1a1a2e; }
+  .sidebar .nav-item.active { background: #eef0ff; color: #4a6cf7; font-weight: 500; }
+
+  .main-area {
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .upload-zone {
+    border: 2px dashed #d0d3d8;
+    border-radius: 8px;
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fff;
+  }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: #4a6cf7; background: #f0f4ff; }
+  .upload-zone .icon { font-size: 36px; margin-bottom: 6px; }
+  .upload-zone .text { font-size: 14px; color: #666; }
+  .upload-zone .hint { font-size: 12px; color: #aaa; margin-top: 4px; }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .tool-card {
+    background: #fff;
+    border: 1px solid #e8eaed;
+    border-radius: 6px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tool-card:hover { border-color: #4a6cf7; box-shadow: 0 1px 4px rgba(74,108,247,0.08); }
+  .tool-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .tool-card p { font-size: 12px; color: #888; }
+
+  .panel {
+    background: #fff;
+    border: 1px solid #e0e3e8;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .panel-header {
+    background: #f8f9fa;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 1px solid #e0e3e8;
+  }
+  .panel-body { padding: 14px; }
+
+  .table-wrapper { overflow: auto; max-height: 400px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f8f9fa; padding: 6px 10px; text-align: left; font-weight: 600; font-size: 12px; color: #555; border-bottom: 2px solid #e0e3e8; white-space: nowrap; }
+  td { padding: 5px 10px; border-bottom: 1px solid #f0f1f3; white-space: nowrap; }
+  tr:hover td { background: #f8f9ff; }
+
+  .btn {
+    padding: 6px 14px; border: none; border-radius: 4px; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .btn-primary { background: #4a6cf7; color: #fff; }
+  .btn-primary:hover { background: #3b5de7; }
+  .btn-success { background: #10b981; color: #fff; }
+  .btn-success:hover { background: #059669; }
+  .btn-outline { background: transparent; color: #555; border: 1px solid #d0d3d8; }
+  .btn-outline:hover { background: #f5f6f8; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  select, input[type="text"] {
+    padding: 6px 8px; border: 1px solid #d0d3d8; border-radius: 4px; font-size: 13px; background: #fff;
+  }
+  select:focus, input:focus { outline: none; border-color: #4a6cf7; box-shadow: 0 0 0 2px rgba(74,108,247,0.12); }
+
+  .info-bar {
+    display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: #666;
+  }
+  .info-bar .stat { display: flex; align-items: center; gap: 4px; }
+  .info-bar .stat strong { color: #1a1a2e; }
+
+  .hidden { display: none !important; }
+
+  /* VBA Generator */
+  .vba-output {
+    background: #1e293b;
+    color: #e2e8f0;
+    font-family: 'Consolas', monospace;
+    font-size: 12px;
+    padding: 12px;
+    border-radius: 6px;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow: auto;
+  }
+  .formula-output {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    color: #166534;
+  }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    padding: 10px 18px; border-radius: 6px; font-size: 13px; color: #fff;
+    z-index: 999; opacity: 0; transform: translateY(12px);
+    transition: all 0.25s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: #10b981; }
+  .toast.error { background: #ef4444; }
+
+  .page-section { display: none; }
+  .page-section.active { display: flex; flex-direction: column; gap: 16px; }
+
+  /* Formula builder */
+  .formula-builder { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 768px) { .formula-builder { grid-template-columns: 1fr; } }
+  .formula-builder .config-panel { display: flex; flex-direction: column; gap: 8px; }
+
+  /* Services page */
+  .service-card {
+    background: #fff; border: 1px solid #e8eaed; border-radius: 8px; padding: 20px;
+    display: flex; gap: 16px; align-items: flex-start;
+  }
+  .service-card .icon { font-size: 28px; }
+  .service-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .service-card p { font-size: 13px; color: #666; line-height: 1.5; }
+  .service-card ul { font-size: 12px; color: #888; margin-top: 6px; padding-left: 16px; }
+  .service-card ul li { margin-bottom: 2px; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>Excel 全能助手</h1>
+  <span class="badge">闲鱼接单利器</span>
+  <span class="sub" id="fileStatus">未加载文件</span>
+</div>
+
+<div class="service-bar">
+  <span class="tag">📊 数据清洗</span>
+  <span class="tag">📝 公式编写</span>
+  <span class="tag">⚡ VBA宏</span>
+  <span class="tag">🔗 表格合并</span>
+  <span class="tag">📋 模板定制</span>
+  <span class="tag" style="background:#fef3c7;color:#92400e;">联系微信: 接单中</span>
+</div>
+
+<div class="app-body">
+  <div class="sidebar">
+    <div class="nav-item active" onclick="switchPage('services')">🏠 服务介绍</div>
+    <div class="nav-item" onclick="switchPage('cleaning')">🧹 数据清洗</div>
+    <div class="nav-item" onclick="switchPage('formula')">📝 公式助手</div>
+    <div class="nav-item" onclick="switchPage('vba')">⚡ VBA生成器</div>
+    <div class="nav-item" onclick="switchPage('merge')">🔗 合并拆分</div>
+    <div class="nav-item" onclick="switchPage('templates')">📋 模板中心</div>
+    <div style="margin-top:auto;padding-top:12px;border-top:1px solid #e0e3e8;">
+      <div class="nav-item" onclick="resetApp()">🔄 重置</div>
+    </div>
+  </div>
+
+  <div class="main-area">
+    <!-- ===== 服务介绍页 ===== -->
+    <div class="page-section active" id="page-services">
+      <div style="font-size:20px;font-weight:700;">Excel 全能助手 · 闲鱼服务</div>
+      <div style="font-size:13px;color:#666;">专业处理各种 Excel 难题，手动几小时的活，几分钟帮你搞定</div>
+
+      <div class="service-card">
+        <div class="icon">📊</div>
+        <div>
+          <h3>数据清洗整理</h3>
+          <p>去重、空值处理、格式统一、乱码修复。上传 Excel 一键预览结果</p>
+          <ul><li>支持 CSV/XLSX/XLS 格式</li><li>去重、空值填充、类型转换</li><li>数据预览后直接下载</li></ul>
+        </div>
+      </div>
+      <div class="service-card">
+        <div class="icon">📝</div>
+        <div>
+          <h3>函数公式编写</h3>
+          <p>VLOOKUP/IF/SUMIFS/XLOOKUP/数据透视表等各类匹配、统计、核对公式</p>
+          <ul><li>输入参数自动生成公式</li><li>支持常见100+函数</li><li>附公式说明和使用方法</li></ul>
+        </div>
+      </div>
+      <div class="service-card">
+        <div class="icon">⚡</div>
+        <div>
+          <h3>VBA 宏定制</h3>
+          <p>一键批量操作、自动生成报表、数据比对，重复工作一键完成</p>
+          <ul><li>按需求生成 VBA 代码</li><li>批量文件处理脚本</li><li>自动报表生成器</li></ul>
+        </div>
+      </div>
+      <div class="service-card">
+        <div class="icon">🔗</div>
+        <div>
+          <h3>表格合并拆分</h3>
+          <p>多表合并、按条件拆分、跨文件数据提取</p>
+          <ul><li>多个 Sheet 合并为一个</li><li>按指定列拆分数据</li><li>跨文件数据汇总</li></ul>
+        </div>
+      </div>
+      <div class="service-card">
+        <div class="icon">📋</div>
+        <div>
+          <h3>模板定制</h3>
+          <p>考勤表、进销存、销售报表、财务对账等各类实用表格</p>
+          <ul><li>按需求定制模板</li><li>自动计算+格式化</li><li>交付即用，小自也能上手</li></ul>
+        </div>
+      </div>
+
+      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:14px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">💡 下单流程</div>
+        <div style="font-size:12px;color:#666;line-height:1.6;">
+          1. 先沟通需求 → 2. 根据复杂程度报价 → 3. 开始制作 → 4. 交付成品 + 操作说明<br>
+          包含 1 次免费微调，小问题随时调整。仅做合规办公效率工具。
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 数据清洗页 ===== -->
+    <div class="page-section" id="page-cleaning">
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <div class="icon">📂</div>
+        <div class="text">点击上传或拖拽 Excel 文件</div>
+        <div class="hint">支持 .xlsx .xls .csv 格式</div>
+      </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleFile(this.files[0])">
+
+      <div id="dataPanel" class="hidden" style="display:flex;flex-direction:column;gap:12px;">
+        <div class="info-bar">
+          <span class="stat">📊 行数: <strong id="rowCount">0</strong></span>
+          <span class="stat">📋 列数: <strong id="colCount">0</strong></span>
+          <span class="stat">⬜ 空值: <strong id="nullCount">0</strong></span>
+          <span class="stat">📄 文件: <strong id="fileName"></strong></span>
+        </div>
+
+        <div class="tools-grid">
+          <div class="tool-card" onclick="runDedup()">
+            <h3>🔍 去重</h3>
+            <p>按指定列移除重复行</p>
+          </div>
+          <div class="tool-card" onclick="runFillNull()">
+            <h3>📭 填充空值</h3>
+            <p>空值填充为指定内容</p>
+          </div>
+          <div class="tool-card" onclick="runDropNull()">
+            <h3>🗑️ 删除空行</h3>
+            <p>删除含空值的行</p>
+          </div>
+          <div class="tool-card" onclick="runTrim()">
+            <h3>✂️ 清理空格</h3>
+            <p>去除首尾多余空格</p>
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-success" onclick="downloadExcel()">⬇ 下载 Excel</button>
+          <button class="btn btn-success" onclick="downloadCSV()">⬇ 下载 CSV</button>
+          <button class="btn btn-outline" onclick="undoLast()">↩ 撤销</button>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">数据预览（前100行）</div>
+          <div class="panel-body">
+            <div class="table-wrapper" id="tableWrapper">
+              <div style="text-align:center;color:#999;padding:20px;">暂无数据</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 公式助手页 ===== -->
+    <div class="page-section" id="page-formula">
+      <div class="panel">
+        <div class="panel-header">📝 Excel 公式助手</div>
+        <div class="panel-body">
+          <div class="formula-builder">
+            <div class="config-panel">
+              <label style="font-size:12px;font-weight:500;color:#555;">选择函数</label>
+              <select id="funcSelect" onchange="onFuncChange()">
+                <option value="vlookup">VLOOKUP - 垂直查找</option>
+                <option value="xlookup">XLOOKUP - 智能查找</option>
+                <option value="if">IF - 条件判断</option>
+                <option value="sumifs">SUMIFS - 多条件求和</option>
+                <option value="countifs">COUNTIFS - 多条件计数</option>
+                <option value="match">MATCH - 查找位置</option>
+                <option value="index_match">INDEX+MATCH - 高级查找</option>
+                <option value="textjoin">TEXTJOIN - 合并文本</option>
+                <option value="unique">UNIQUE - 提取唯一值</option>
+                <option value="filter">FILTER - 筛选数据</option>
+              </select>
+
+              <label style="font-size:12px;font-weight:500;color:#555;">参数说明</label>
+              <div id="funcDesc" style="font-size:12px;color:#888;background:#f8f9fa;padding:8px;border-radius:4px;">
+                VLOOKUP(查找值, 查找范围, 返回列号, [匹配方式])
+              </div>
+
+              <label style="font-size:12px;font-weight:500;color:#555;">查找值单元格</label>
+              <input type="text" id="lookupVal" placeholder="如: A2 或 '张三'" value="A2">
+
+              <div id="extraParams">
+                <label style="font-size:12px;font-weight:500;color:#555;">查找范围</label>
+                <input type="text" id="lookupRange" placeholder="如: Sheet2!A:B" value="Sheet2!A:B">
+                <label style="font-size:12px;font-weight:500;color:#555;">返回列号</label>
+                <input type="text" id="returnCol" placeholder="如: 2" value="2">
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <button class="btn btn-primary" onclick="generateFormula()" style="align-self:flex-start;">生成公式</button>
+              <label style="font-size:12px;font-weight:500;color:#555;">生成的公式</label>
+              <div class="formula-output" id="formulaResult">点击上方按钮生成公式</div>
+              <button class="btn btn-outline btn-sm" onclick="copyFormula()" style="align-self:flex-start;">📋 复制公式</button>
+              <div style="font-size:12px;color:#888;background:#f8f9fa;padding:8px;border-radius:4px;margin-top:8px;">
+                <strong>💡 使用说明：</strong>复制公式后粘贴到 Excel 单元格中，根据实际数据调整单元格引用。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== VBA 生成器页 ===== -->
+    <div class="page-section" id="page-vba">
+      <div class="panel">
+        <div class="panel-header">⚡ VBA 宏代码生成器</div>
+        <div class="panel-body" style="display:flex;flex-direction:column;gap:12px;">
+          <label style="font-size:12px;font-weight:500;color:#555;">选择宏类型</label>
+          <select id="vbaType" onchange="onVBAChange()">
+            <option value="dedup">去重（保留第一条）</option>
+            <option value="split_sheet">按列拆分为多个 Sheet</option>
+            <option value="merge_sheets">合并多个 Sheet</option>
+            <option value="batch_rename">批量重命名 Sheet</option>
+            <option value="export_pdf">导出为 PDF</option>
+            <option value="highlight_dup">高亮重复值</option>
+            <option value="auto_summary">自动生成汇总表</option>
+          </select>
+
+          <div id="vbaConfig">
+            <label style="font-size:12px;font-weight:500;color:#555;">配置（按需修改）</label>
+            <input type="text" id="vbaCol" placeholder="目标列号（如: A）" value="A">
+          </div>
+
+          <button class="btn btn-primary" onclick="generateVBA()" style="align-self:flex-start;">生成 VBA 代码</button>
+
+          <label style="font-size:12px;font-weight:500;color:#555;">生成的代码（复制后粘贴到 VBA 编辑器）</label>
+          <div class="vba-output" id="vbaResult">点击上方按钮生成 VBA 代码</div>
+          <button class="btn btn-outline btn-sm" onclick="copyVBA()" style="align-self:flex-start;">📋 复制代码</button>
+
+          <div style="font-size:12px;color:#888;background:#fef3c7;border-radius:4px;padding:8px;">
+            <strong>📖 使用方法：</strong>Alt+F11 打开 VBA 编辑器 → 插入模块 → 粘贴代码 → F5 运行
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 合并拆分页 ===== -->
+    <div class="page-section" id="page-merge">
+      <div class="panel">
+        <div class="panel-header">🔗 表格合并拆分</div>
+        <div class="panel-body" style="display:flex;flex-direction:column;gap:12px;">
+          <div class="tools-grid">
+            <div class="tool-card" onclick="mergeSheets()">
+              <h3>🔗 合并 Sheet</h3>
+              <p>将当前文件所有 Sheet 合并到一个表</p>
+            </div>
+            <div class="tool-card" onclick="splitByColumn()">
+              <h3>✂️ 按列拆分</h3>
+              <p>按指定列的值拆分为多个 Sheet</p>
+            </div>
+          </div>
+          <div class="info-bar" id="mergePanel" style="display:none;">
+            <span id="mergeStatus" style="font-size:13px;"></span>
+            <button class="btn btn-success btn-sm" onclick="downloadMerged()">⬇ 下载结果</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 模板中心页 ===== -->
+    <div class="page-section" id="page-templates">
+      <div class="panel">
+        <div class="panel-header">📋 模板中心</div>
+        <div class="panel-body">
+          <div class="tools-grid">
+            <div class="tool-card" onclick="generateTemplate('attendance')">
+              <h3>📅 考勤表</h3>
+              <p>月度考勤/请假统计模板</p>
+            </div>
+            <div class="tool-card" onclick="generateTemplate('sales')">
+              <h3>📈 销售报表</h3>
+              <p>销售数据汇总分析模板</p>
+            </div>
+            <div class="tool-card" onclick="generateTemplate('inventory')">
+              <h3>📦 进销存</h3>
+              <p>库存进销存管理模板</p>
+            </div>
+            <div class="tool-card" onclick="generateTemplate('finance')">
+              <h3>💰 财务对账</h3>
+              <p>收入支出对账模板</p>
+            </div>
+          </div>
+          <div id="templateResult" class="hidden" style="margin-top:12px;">
+            <div class="btn-group">
+              <button class="btn btn-success" onclick="downloadTemplate()">⬇ 下载模板</button>
+            </div>
+            <div style="font-size:12px;color:#666;margin-top:6px;">模板已生成，点击下载即可</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== State =====
+var workbook = null;
+var currentData = null;
+var sheetNames = [];
+var history = [];
+var currentPage = 'services';
+var tempBlob = null;
+
+// ===== Upload =====
+var uploadZone = document.getElementById('uploadZone');
+var fileInput = document.getElementById('fileInput');
+
+uploadZone.addEventListener('dragover', function(e) { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', function() { uploadZone.classList.remove('drag-over'); });
+uploadZone.addEventListener('drop', function(e) {
+  e.preventDefault(); uploadZone.classList.remove('drag-over');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = new Uint8Array(e.target.result);
+      workbook = XLSX.read(data, { type: 'array' });
+      sheetNames = workbook.SheetNames;
+      showToast('已加载: ' + file.name + ' (' + sheetNames.length + ' 个 Sheet)', 'success');
+      document.getElementById('fileStatus').textContent = file.name;
+      loadSheet(0);
+    } catch(err) {
+      showToast('文件解析失败: ' + err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function loadSheet(idx) {
+  if (!workbook) return;
+  var sheet = workbook.Sheets[workbook.SheetNames[idx]];
+  var json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+  currentData = json;
+  renderTable(json);
+  document.getElementById('dataPanel').style.display = 'flex';
+  document.getElementById('rowCount').textContent = json.length;
+  document.getElementById('colCount').textContent = json.length > 0 ? Object.keys(json[0]).length : 0;
+  var nulls = 0;
+  json.forEach(function(r) {
+    Object.keys(r).forEach(function(k) { if (r[k] === '' || r[k] === null || r[k] === undefined) nulls++; });
+  });
+  document.getElementById('nullCount').textContent = nulls;
+  document.getElementById('fileName').textContent = workbook.SheetNames[idx];
+  history = [];
+}
+
+function renderTable(data) {
+  var wrapper = document.getElementById('tableWrapper');
+  if (!data || data.length === 0) {
+    wrapper.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">暂无数据</div>';
+    return;
+  }
+  var cols = Object.keys(data[0]);
+  var html = '<table><thead><tr>';
+  cols.forEach(function(c) { html += '<th>' + esc(c) + '</th>'; });
+  html += '</tr></thead><tbody>';
+  var maxRows = Math.min(data.length, 100);
+  for (var i = 0; i < maxRows; i++) {
+    html += '<tr>';
+    cols.forEach(function(c) {
+      var v = data[i][c];
+      if (v === '' || v === null || v === undefined) {
+        html += '<td style="color:#ccc;font-style:italic;">(空)</td>';
+      } else {
+        html += '<td title="' + esc(String(v)) + '">' + esc(String(v)).substring(0, 30) + '</td>';
+      }
+    });
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  wrapper.innerHTML = html;
+}
+
+function esc(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ===== Cleaning Operations =====
+function runDedup() {
+  if (!currentData) { showToast('请先上传文件', 'error'); return; }
+  var col = prompt('按哪列去重？（留空按全列）', '');
+  saveHistory();
+  var seen = {};
+  var result = currentData.filter(function(row) {
+    if (col) {
+      var key = String(row[col] || '');
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    } else {
+      var key = JSON.stringify(row);
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    }
+  });
+  currentData = result;
+  renderTable(result);
+  document.getElementById('rowCount').textContent = result.length;
+  showToast('去重完成！剩余 ' + result.length + ' 行', 'success');
+}
+
+function runFillNull() {
+  if (!currentData) { showToast('请先上传文件', 'error'); return; }
+  var val = prompt('空值填充为：', '0');
+  if (val === null) return;
+  saveHistory();
+  currentData = currentData.map(function(row) {
+    var r = {};
+    Object.keys(row).forEach(function(k) { r[k] = (row[k] === '' || row[k] === null || row[k] === undefined) ? val : row[k]; });
+    return r;
+  });
+  renderTable(currentData);
+  showToast('空值已填充！', 'success');
+}
+
+function runDropNull() {
+  if (!currentData) { showToast('请先上传文件', 'error'); return; }
+  saveHistory();
+  currentData = currentData.filter(function(row) {
+    for (var k in row) { if (row[k] === '' || row[k] === null || row[k] === undefined) return false; }
+    return true;
+  });
+  renderTable(currentData);
+  document.getElementById('rowCount').textContent = currentData.length;
+  showToast('空行已删除！剩余 ' + currentData.length + ' 行', 'success');
+}
+
+function runTrim() {
+  if (!currentData) { showToast('请先上传文件', 'error'); return; }
+  saveHistory();
+  currentData = currentData.map(function(row) {
+    var r = {};
+    Object.keys(row).forEach(function(k) { r[k] = String(row[k]).trim(); });
+    return r;
+  });
+  renderTable(currentData);
+  showToast('空格已清理！', 'success');
+}
+
+function saveHistory() {
+  history.push(JSON.stringify(currentData));
+}
+
+function undoLast() {
+  if (history.length === 0) { showToast('没有可撤销的操作', 'error'); return; }
+  currentData = JSON.parse(history.pop());
+  renderTable(currentData);
+  document.getElementById('rowCount').textContent = currentData.length;
+  showToast('已撤销', 'success');
+}
+
+// ===== Download =====
+function downloadExcel() {
+  if (!currentData) { showToast('请先上传文件', 'error'); return; }
+  var ws = XLSX.utils.json_to_sheet(currentData);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Cleaned');
+  var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  downloadBlob(new Blob([wbout], { type: 'application/octet-stream' }), 'cleaned_data.xlsx');
+}
+
+function downloadCSV() {
+  if (!currentData) { showToast('请先上传文件', 'error'); return; }
+  var ws = XLSX.utils.json_to_sheet(currentData);
+  var csv = XLSX.utils.sheet_to_csv(ws);
+  downloadBlob(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }), 'cleaned_data.csv');
+}
+
+function downloadBlob(blob, filename) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+}
+
+// ===== Formula Helper =====
+function onFuncChange() {
+  var func = document.getElementById('funcSelect').value;
+  var desc = document.getElementById('funcDesc');
+  var params = document.getElementById('extraParams');
+  if (func === 'vlookup') {
+    desc.textContent = 'VLOOKUP(查找值, 查找范围, 返回列号, [匹配方式])\n查找值要在范围的第一列';
+    params.innerHTML = '<label>查找范围</label><input type="text" id="lookupRange" value="Sheet2!A:B"><label>返回列号</label><input type="text" id="returnCol" value="2">';
+  } else if (func === 'xlookup') {
+    desc.textContent = 'XLOOKUP(查找值, 查找列, 返回列, [未找到值], [匹配方式])\n新版 Excel，比 VLOOKUP 更好用';
+    params.innerHTML = '<label>查找列</label><input type="text" id="lookupRange" value="Sheet2!A:A"><label>返回列</label><input type="text" id="returnCol" value="Sheet2!B:B">';
+  } else if (func === 'if') {
+    desc.textContent = 'IF(条件判断, 为真时返回, 为假时返回)';
+    params.innerHTML = '<label>条件判断</label><input type="text" id="lookupRange" value="A2>60"><label>为真返回</label><input type="text" id="returnCol" value="\"及格\""><label style="margin-top:6px;">为假返回</label><input type="text" id="extraVal" value="\"不及格\"">';
+  } else if (func === 'sumifs') {
+    desc.textContent = 'SUMIFS(求和列, 条件列1, 条件1, [条件列2, 条件2, ...])';
+    params.innerHTML = '<label>求和列</label><input type="text" id="lookupRange" value="C:C"><label>条件列</label><input type="text" id="returnCol" value="A:A"><label>条件</label><input type="text" id="extraVal" value="\"条件\"">';
+  } else if (func === 'index_match') {
+    desc.textContent = 'INDEX(返回范围, MATCH(查找值, 查找列, 0))\n灵活的高级查找组合';
+    params.innerHTML = '<label>返回范围</label><input type="text" id="lookupRange" value="Sheet2!B:B"><label>查找值</label><input type="text" id="returnCol" value="A2"><label>查找列</label><input type="text" id="extraVal" value="Sheet2!A:A">';
+  } else {
+    desc.textContent = '请根据实际数据调整参数';
+    params.innerHTML = '<label>参数</label><input type="text" id="lookupRange" placeholder="按需填写"><label>参数2</label><input type="text" id="returnCol" placeholder="按需填写">';
+  }
+}
+
+function generateFormula() {
+  var func = document.getElementById('funcSelect').value;
+  var val = document.getElementById('lookupVal').value || 'A2';
+  var range = document.getElementById('lookupRange') ? document.getElementById('lookupRange').value : '';
+  var col = document.getElementById('returnCol') ? document.getElementById('returnCol').value : '';
+  var extra = document.getElementById('extraVal') ? document.getElementById('extraVal').value : '';
+  var result = '';
+  if (func === 'vlookup') {
+    result = '=VLOOKUP(' + val + ', ' + range + ', ' + col + ', 0)';
+  } else if (func === 'xlookup') {
+    result = '=XLOOKUP(' + val + ', ' + range + ', ' + col + ')';
+  } else if (func === 'if') {
+    result = '=IF(' + range + ', ' + col + ', ' + extra + ')';
+  } else if (func === 'sumifs') {
+    result = '=SUMIFS(' + range + ', ' + col + ', ' + extra + ')';
+  } else if (func === 'index_match') {
+    result = '=INDEX(' + range + ', MATCH(' + col + ', ' + extra + ', 0))';
+  } else if (func === 'countifs') {
+    result = '=COUNTIFS(' + range + ', ' + extra + ')';
+  } else if (func === 'match') {
+    result = '=MATCH(' + val + ', ' + range + ', 0)';
+  } else if (func === 'textjoin') {
+    result = '=TEXTJOIN(", ", TRUE, ' + range + ')';
+  } else if (func === 'unique') {
+    result = '=UNIQUE(' + range + ')';
+  } else if (func === 'filter') {
+    result = '=FILTER(' + range + ', ' + extra + ')';
+  }
+  document.getElementById('formulaResult').textContent = result;
+}
+
+function copyFormula() {
+  var text = document.getElementById('formulaResult').textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    showToast('公式已复制！', 'success');
+  }).catch(function() {
+    showToast('复制失败，请手动选中复制', 'error');
+  });
+}
+
+// ===== VBA Generator =====
+function onVBAChange() {
+  var type = document.getElementById('vbaType').value;
+  var config = document.getElementById('vbaConfig');
+  if (type === 'dedup' || type === 'split_sheet' || type === 'highlight_dup') {
+    config.style.display = 'block';
+  } else {
+    config.style.display = 'none';
+  }
+}
+
+function generateVBA() {
+  var type = document.getElementById('vbaType').value;
+  var col = document.getElementById('vbaCol').value || 'A';
+  var vba = '';
+  if (type === 'dedup') {
+    vba = 'Sub RemoveDuplicates()\n    Dim ws As Worksheet\n    Set ws = ActiveSheet\n    ws.Range("$A$1:$Z$10000").RemoveDuplicates Columns:=' + col2num(col) + ', Header:=xlYes\n    MsgBox "去重完成！"\nEnd Sub';
+  } else if (type === 'split_sheet') {
+    vba = 'Sub SplitByColumn()\n    Dim ws As Worksheet, newWs As Worksheet\n    Dim lastRow As Long, i As Long\n    Dim colVal As String\n    Set ws = ActiveSheet\n    lastRow = ws.Cells(ws.Rows.Count, "' + col + '").End(xlUp).Row\n    For i = 2 To lastRow\n        colVal = ws.Cells(i, ' + col2num(col) + ').Value\n        If Not SheetExists(colVal) Then\n            Set newWs = Worksheets.Add(After:=Worksheets(Worksheets.Count))\n            newWs.Name = colVal\n            ws.Rows(1).Copy newWs.Rows(1)\n        End If\n        Set newWs = Worksheets(colVal)\n        ws.Rows(i).Copy newWs.Rows(newWs.Cells(newWs.Rows.Count, 1).End(xlUp).Row + 1)\n    Next i\n    MsgBox "拆分完成！"\nEnd Sub\n\nFunction SheetExists(name) As Boolean\n    Dim ws As Worksheet\n    On Error Resume Next\n    Set ws = Worksheets(name)\n    SheetExists = Not ws Is Nothing\nEnd Function';
+  } else if (type === 'merge_sheets') {
+    vba = 'Sub MergeAllSheets()\n    Dim newWs As Worksheet\n    Set newWs = Worksheets.Add(After:=Worksheets(Worksheets.Count))\n    newWs.Name = "汇总"\n    Dim ws As Worksheet\n    Dim r As Long\n    r = 1\n    For Each ws In Worksheets\n        If ws.Name <> "汇总" Then\n            ws.UsedRange.Copy newWs.Cells(r, 1)\n            r = newWs.Cells(newWs.Rows.Count, 1).End(xlUp).Row + 1\n        End If\n    Next\n    MsgBox "合并完成！共 " & (r - 1) & " 行"\nEnd Sub';
+  } else if (type === 'batch_rename') {
+    vba = 'Sub BatchRename()\n    Dim ws As Worksheet\n    Dim i As Integer\n    i = 1\n    For Each ws In Worksheets\n        ws.Name = "Sheet" & i\n        i = i + 1\n    Next\n    MsgBox "重命名完成！"\nEnd Sub';
+  } else if (type === 'export_pdf') {
+    vba = 'Sub ExportToPDF()\n    Dim ws As Worksheet\n    Dim folder As String\n    folder = ThisWorkbook.Path & "\\PDF输出\\"\n    MkDir folder\n    For Each ws In Worksheets\n        ws.ExportAsFixedFormat Type:=xlTypePDF, _\n            Filename:=folder & ws.Name & ".pdf", _\n            Quality:=xlQualityStandard\n    Next\n    MsgBox "PDF 导出完成！保存在: " & folder\nEnd Sub';
+  } else if (type === 'highlight_dup') {
+    vba = 'Sub HighlightDuplicates()\n    Dim rng As Range\n    Set rng = Range("' + col + ':' + col + '")\n    rng.FormatConditions.AddUniqueValues\n    rng.FormatConditions(rng.FormatConditions.Count).SetFirstPriority\n    With rng.FormatConditions(1)\n        .DupeUnique = xlDuplicate\n        .Interior.Color = RGB(255, 199, 206)\n        .Font.Color = RGB(156, 0, 6)\n    End With\n    MsgBox "重复值已高亮！"\nEnd Sub';
+  } else if (type === 'auto_summary') {
+    vba = 'Sub AutoSummary()\n    Dim ws As Worksheet, sumWs As Worksheet\n    Set sumWs = Worksheets.Add(After:=Worksheets(Worksheets.Count))\n    sumWs.Name = "汇总统计"\n    sumWs.Cells(1, 1) = "Sheet名称"\n    sumWs.Cells(1, 2) = "数据行数"\n    sumWs.Cells(1, 3) = "最后更新"\n    Dim i As Integer\n    i = 2\n    For Each ws In Worksheets\n        sumWs.Cells(i, 1) = ws.Name\n        sumWs.Cells(i, 2) = ws.UsedRange.Rows.Count - 1\n        sumWs.Cells(i, 3) = Now()\n        i = i + 1\n    Next\n    sumWs.Columns("A:C").AutoFit\n    MsgBox "汇总表已生成！"\nEnd Sub';
+  }
+  document.getElementById('vbaResult').textContent = vba.replace(/\\n/g, '\n');
+}
+
+function col2num(col) {
+  return col.charCodeAt(0) - 64;
+}
+
+function copyVBA() {
+  var text = document.getElementById('vbaResult').textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    showToast('代码已复制！', 'success');
+  }).catch(function() {
+    showToast('复制失败，请手动选中复制', 'error');
+  });
+}
+
+// ===== Merge/Split =====
+function mergeSheets() {
+  if (!workbook) { showToast('请先上传文件', 'error'); return; }
+  saveHistory();
+  var allData = [];
+  sheetNames.forEach(function(name) {
+    var sheet = workbook.Sheets[name];
+    var json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    json.forEach(function(row) { row['_来源'] = name; allData.push(row); });
+  });
+  currentData = allData;
+  renderTable(allData);
+  document.getElementById('rowCount').textContent = allData.length;
+  document.getElementById('mergePanel').style.display = 'flex';
+  document.getElementById('mergeStatus').textContent = '合并完成！共 ' + allData.length + ' 行';
+  showToast('合并完成！共 ' + allData.length + ' 行', 'success');
+}
+
+function splitByColumn() {
+  if (!currentData) { showToast('请先上传文件', 'error'); return; }
+  var col = prompt('按哪列拆分？', '');
+  if (!col) return;
+  var groups = {};
+  currentData.forEach(function(row) {
+    var key = String(row[col] || '其他');
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(row);
+  });
+  var wb = XLSX.utils.book_new();
+  Object.keys(groups).forEach(function(key) {
+    var ws = XLSX.utils.json_to_sheet(groups[key]);
+    XLSX.utils.book_append_sheet(wb, ws, String(key).substring(0, 31));
+  });
+  var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  tempBlob = new Blob([wbout], { type: 'application/octet-stream' });
+  var msg = '拆分完成！共 ' + Object.keys(groups).length + ' 个 Sheet';
+  document.getElementById('mergePanel').style.display = 'flex';
+  document.getElementById('mergeStatus').textContent = msg;
+  document.getElementById('mergePanel').querySelector('.btn-success').textContent = '⬇ 下载拆分结果';
+  document.getElementById('mergePanel').querySelector('.btn-success').onclick = function() {
+    downloadBlob(tempBlob, 'split_result.xlsx');
+  };
+  showToast(msg, 'success');
+}
+
+function downloadMerged() {
+  if (currentData) downloadExcel();
+}
+
+// ===== Templates =====
+function generateTemplate(type) {
+  var wb = XLSX.utils.book_new();
+  var data = [];
+  if (type === 'attendance') {
+    data = [
+      { '姓名': '', '日期': '', '上班打卡': '', '下班打卡': '', '状态': '正常', '备注': '' }
+    ];
+  } else if (type === 'sales') {
+    data = [
+      { '日期': '', '产品': '', '数量': '', '单价': '', '金额': '', '客户': '', '备注': '' }
+    ];
+  } else if (type === 'inventory') {
+    data = [
+      { '商品编号': '', '商品名称': '', '入库数量': '', '出库数量': '', '库存': '', '单价': '', '金额': '' }
+    ];
+  } else if (type === 'finance') {
+    data = [
+      { '日期': '', '类别': '收入', '金额': '', '收支项目': '', '对方': '', '余额': '', '备注': '' }
+    ];
+  }
+  var ws = XLSX.utils.json_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb, ws, '模板');
+  var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  tempBlob = new Blob([wbout], { type: 'application/octet-stream' });
+  document.getElementById('templateResult').style.display = 'block';
+  showToast('模板已生成！', 'success');
+}
+
+function downloadTemplate() {
+  if (tempBlob) downloadBlob(tempBlob, 'template.xlsx');
+}
+
+// ===== Navigation =====
+function switchPage(page) {
+  document.querySelectorAll('.page-section').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(el) { el.classList.remove('active'); });
+  currentPage = page;
+}
+
+function resetApp() {
+  workbook = null;
+  currentData = null;
+  history = [];
+  document.getElementById('dataPanel').style.display = 'none';
+  document.getElementById('fileStatus').textContent = '未加载文件';
+  document.getElementById('tableWrapper').innerHTML = '<div style="text-align:center;color:#999;padding:20px;">暂无数据</div>';
+  document.getElementById('mergePanel').style.display = 'none';
+  document.getElementById('templateResult').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+  showToast('已重置', 'success');
+}
+
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (type || '');
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+// ===== Init =====
+onFuncChange();
+onVBAChange();
+</script>
+</body>
+</html>
