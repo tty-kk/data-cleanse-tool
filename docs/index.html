@@ -324,24 +324,15 @@
           <span class="stat">📄 文件: <strong id="fileName"></strong></span>
         </div>
 
-        <div class="tools-grid">
-          <div class="tool-card" onclick="runDedup()">
-            <h3>🔍 去重</h3>
-            <p>按指定列移除重复行</p>
-          </div>
-          <div class="tool-card" onclick="runFillNull()">
-            <h3>📭 填充空值</h3>
-            <p>空值填充为指定内容</p>
-          </div>
-          <div class="tool-card" onclick="runDropNull()">
-            <h3>🗑️ 删除空行</h3>
-            <p>删除含空值的行</p>
-          </div>
-          <div class="tool-card" onclick="runTrim()">
-            <h3>✂️ 清理空格</h3>
-            <p>去除首尾多余空格</p>
-          </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <button class="btn btn-primary btn-sm" onclick="openCleanTool('basic')">🧹 基础清洗</button>
+          <button class="btn btn-primary btn-sm" onclick="openCleanTool('text')">📝 文本处理</button>
+          <button class="btn btn-primary btn-sm" onclick="openCleanTool('duplicate')">🔍 重复值</button>
+          <button class="btn btn-primary btn-sm" onclick="openCleanTool('structure')">📐 结构调整</button>
+          <button class="btn btn-outline btn-sm" onclick="undoLast()">↩ 撤销</button>
+          <button class="btn btn-outline btn-sm" onclick="redoLast()">↪ 重做</button>
         </div>
+        <div id="cleanToolPanel" style="margin-bottom:8px;"></div>
 
         <div class="btn-group">
           <button class="btn btn-success" onclick="downloadExcel()">⬇ 下载 Excel</button>
