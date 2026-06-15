@@ -246,6 +246,7 @@
     <div class="nav-item" onclick="switchPage('vba')">⚡ VBA生成器</div>
     <div class="nav-item" onclick="switchPage('merge')">🔗 合并拆分</div>
     <div class="nav-item" onclick="switchPage('templates')">📋 模板中心</div>
+    <div class="nav-item" onclick="switchPage('reports')">📊 一键报表</div>
     <div style="margin-top:auto;padding-top:12px;border-top:1px solid #e0e3e8;">
       <div class="nav-item" onclick="resetApp()">🔄 重置</div>
     </div>
@@ -423,7 +424,24 @@
       </div>
     </div>
 
-    <!-- ===== VBA生成器页 ===== -->
+    <!-- ===== 报表生成器页 ===== -->
+    <div class="page-section" id="page-reports">
+      <div class="panel">
+        <div class="panel-header">📊 一键报表生成器</div>
+        <div class="panel-body" style="display:flex;flex-direction:column;gap:12px;">
+          <div style="font-size:13px;color:#666;">上传数据后选择报表模板，自动生成带格式的 Excel 报表</div>
+          <div class="tools-grid">
+            <div class="tool-card" onclick="generateReport('sales')"><h3>📈 销售报表</h3><p>按产品汇总销售金额</p></div>
+            <div class="tool-card" onclick="generateReport('finance')"><h3>💰 财务对账</h3><p>收入支出汇总表</p></div>
+            <div class="tool-card" onclick="generateReport('summary')"><h3>📊 数据汇总</h3><p>按指定列分组统计</p></div>
+            <div class="tool-card" onclick="generateReport('filtered')"><h3>🔍 筛选导出</h3><p>按条件筛选并导出</p></div>
+          </div>
+          <div id="reportResult" style="font-size:13px;color:#888;">上传数据后点击生成报表</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== VBA生成器页 =====
     <div class="page-section" id="page-vba">
       <div class="panel">
         <div class="panel-header">⚡ VBA 宏代码生成器</div>
@@ -470,6 +488,10 @@
             <div class="tool-card" onclick="splitByColumn()">
               <h3>✂️ 按列拆分</h3>
               <p>按指定列的值拆分为多个 Sheet</p>
+            </div>
+            <div class="tool-card" onclick="document.getElementById('multiMergeInput').click()">
+              <h3>📁 跨文件合并</h3>
+              <p>合并多个 Excel 文件</p>
             </div>
           </div>
           <div class="info-bar" id="mergePanel" style="display:none;">
@@ -1055,5 +1077,6 @@ function onFuncChange() {}
 
 onVBAChange();
 </script>
-<script src="cleaner.js?v=2"></script>\n</body>
+<script src="cleaner.js?v=2"
+<script src="features.js?v=1"></script>></script>\n</body>
 </html>
