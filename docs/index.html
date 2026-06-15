@@ -352,57 +352,79 @@
     </div>
 
     <!-- ===== 公式助手页 ===== -->
-    <div class="page-section" id="page-formula">
+    <div class="page-section" id=page-formula">
       <div class="panel">
         <div class="panel-header">📝 Excel 公式助手</div>
         <div class="panel-body">
-          <div class="formula-builder">
-            <div class="config-panel">
-              <label style="font-size:12px;font-weight:500;color:#555;">选择函数</label>
-              <select id="funcSelect" onchange="onFuncChange()">
-                <option value="vlookup">VLOOKUP - 垂直查找</option>
-                <option value="xlookup">XLOOKUP - 智能查找</option>
-                <option value="if">IF - 条件判断</option>
-                <option value="sumifs">SUMIFS - 多条件求和</option>
-                <option value="countifs">COUNTIFS - 多条件计数</option>
-                <option value="match">MATCH - 查找位置</option>
-                <option value="index_match">INDEX+MATCH - 高级查找</option>
-                <option value="textjoin">TEXTJOIN - 合并文本</option>
-                <option value="unique">UNIQUE - 提取唯一值</option>
-                <option value="filter">FILTER - 筛选数据</option>
-              </select>
-
-              <label style="font-size:12px;font-weight:500;color:#555;">参数说明</label>
-              <div id="funcDesc" style="font-size:12px;color:#888;background:#f8f9fa;padding:8px;border-radius:4px;">
-                VLOOKUP(查找值, 查找范围, 返回列号, [匹配方式])
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <button class="btn btn-primary btn-sm" onclick="switchFormulaTab('nl')">🤖 自然语言生成</button>
+            <button class="btn btn-outline btn-sm" onclick="switchFormulaTab('explain')">🔍 公式照妖镜</button>
+            <button class="btn btn-outline btn-sm" onclick="switchFormulaTab('scan')">🔎 批量大扫除</button>
+            <button class="btn btn-outline btn-sm" onclick="switchFormulaTab('templates')">📚 模板库</button>
+          </div>
+          <div id="formulaContainer">
+            <!-- NL tab -->
+            <div id="formula-tab-nl">
+              <div style="margin-bottom:8px;">
+                <label style="font-size:12px;font-weight:500;color:#555;">用中文描述你想要的公式</label>
+                <textarea id="nlInput" style="width:100%;padding:8px;border:1px solid #d0d3d8;border-radius:4px;font-size:13px;min-height:60px;" placeholder="例如: 如果A列大于100且B列包含已完成就返回成功"></textarea>
               </div>
-
-              <label style="font-size:12px;font-weight:500;color:#555;">查找值单元格</label>
-              <input type="text" id="lookupVal" placeholder="如: A2 或 '张三'" value="A2">
-
-              <div id="extraParams">
-                <label style="font-size:12px;font-weight:500;color:#555;">查找范围</label>
-                <input type="text" id="lookupRange" placeholder="如: Sheet2!A:B" value="Sheet2!A:B">
-                <label style="font-size:12px;font-weight:500;color:#555;">返回列号</label>
-                <input type="text" id="returnCol" placeholder="如: 2" value="2">
+              <div class="btn-group">
+                <button class="btn btn-primary" onclick="generateFromNL()">🤖 生成公式</button>
+                <button class="btn btn-outline btn-sm" onclick="copyFormulaResult()">📋 复制</button>
+              </div>
+              <div id="nlResult" class="formula-output" style="margin-top:8px;">点击生成公式</div>
+            </div>
+            <!-- Explain tab -->
+            <div id="formula-tab-explain" style="display:none;">
+              <div style="margin-bottom:8px;">
+                <label style="font-size:12px;font-weight:500;color:#555;">粘贴 Excel 公式</label>
+                <textarea id="explainInput" style="width:100%;padding:8px;border:1px solid #d0d3d8;border-radius:4px;font-size:13px;font-family:monospace;min-height:60px;" placeholder="例如: =VLOOKUP(A2,B:C,2,0)"></textarea>
+              </div>
+              <div class="btn-group">
+                <button class="btn btn-primary" onclick="explainFormula()">🔍 翻译解释</button>
+                <button class="btn btn-primary btn-sm" onclick="formatFormula()">📐 格式化</button>
+              </div>
+              <div id="explainResult" style="margin-top:8px;">
+                <div class="formula-output" style="margin-bottom:8px;display:none;" id="formattedFormula"></div>
+                <div class="panel" style="border:1px solid #e0e3e8;">
+                  <div class="panel-header">📖 中文解释</div>
+                  <div class="panel-body" id="explainText" style="font-size:13px;line-height:1.6;color:#333;">粘贴公式后点击翻译</div>
+                </div>
               </div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:8px;">
-              <button class="btn btn-primary" onclick="generateFormula()" style="align-self:flex-start;">生成公式</button>
-              <label style="font-size:12px;font-weight:500;color:#555;">生成的公式</label>
-              <div class="formula-output" id="formulaResult">点击上方按钮生成公式</div>
-              <button class="btn btn-outline btn-sm" onclick="copyFormula()" style="align-self:flex-start;">📋 复制公式</button>
-              <div style="font-size:12px;color:#888;background:#f8f9fa;padding:8px;border-radius:4px;margin-top:8px;">
-                <strong>💡 使用说明：</strong>复制公式后粘贴到 Excel 单元格中，根据实际数据调整单元格引用。
+            <!-- Scan tab -->
+            <div id="formula-tab-scan" style="display:none;">
+              <div style="margin-bottom:8px;">
+                <label style="font-size:12px;font-weight:500;color:#555;">扫描当前文件中的公式问题</label>
+                <div style="font-size:12px;color:#888;margin-bottom:8px;">上传 Excel 后检查公式错误、引用断裂等问题</div>
               </div>
+              <div class="btn-group">
+                <button class="btn btn-primary" onclick="scanFormulas()">🔎 开始扫描</button>
+              </div>
+              <div id="scanResults" style="margin-top:8px;font-size:13px;color:#999;text-align:center;padding:20px;">上传 Excel 文件后扫描</div>
+            </div>
+            <!-- Templates tab -->
+            <div id="formula-tab-templates" style="display:none;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">
+                <div class="tool-card" onclick="useTemplate('if_grade')"><h3>🏆 成绩评级</h3><p>=IF(A2>=90,"优秀",IF(A2>=60,"及格","不及格"))</p></div>
+                <div class="tool-card" onclick="useTemplate('vlookup_inv')"><h3>🔍 匹配单价</h3><p>=VLOOKUP(A2,单价表!A:B,2,0)</p></div>
+                <div class="tool-card" onclick="useTemplate('sum_if_month')"><h3>📊 月度汇总</h3><p>=SUMIFS(C:C,A:A,">="&DATE(2024,1,1),A:A,"<="&DATE(2024,1,31))</p></div>
+                <div class="tool-card" onclick="useTemplate('datediff')"><h3>📅 计算工龄</h3><p>=DATEDIF(A2,TODAY(),"Y")&"年"&DATEDIF(A2,TODAY(),"YM")&"月"</p></div>
+                <div class="tool-card" onclick="useTemplate('dedup_count')"><h3>📋 去重计数</h3><p>=SUMPRODUCT(1/COUNTIF(A:A,A:A))</p></div>
+                <div class="tool-card" onclick="useTemplate('rank_num')"><h3>🏅 排名</h3><p>=RANK(A2,$A$2:$A$100)</p></div>
+                <div class="tool-card" onclick="useTemplate('id_extract')"><h3>🆔 提取生日</h3><p>=MID(A2,7,8)</p></div>
+                <div class="tool-card" onclick="useTemplate('status_icon')"><h3>✅ 状态图标</h3><p>=IF(A2="是","✅","❌")</p></div>
+              </div>
+              <div id="templateFormulaResult" class="formula-output" style="margin-top:8px;">点击模板即可复制公式</div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ===== VBA 生成器页 ===== -->
-    <div class="page-section" id="page-vba">
+    <!-- ===== VBA生成器页 ===== -->
+    <div class="page-section" id="page-vbapage-vba">
       <div class="panel">
         <div class="panel-header">⚡ VBA 宏代码生成器</div>
         <div class="panel-body" style="display:flex;flex-direction:column;gap:12px;">
@@ -606,7 +628,128 @@ function esc(s) {
   return d.innerHTML;
 }
 
-// ===== 清洗功能 (由 cleaner.js 提供) =====\n// ===== Download =====
+// ===== 清洗功能 (由 cleaner.js 提供) =====\n
+// ===== 公式助手 (升级版) =====
+function switchFormulaTab(tab) {
+  ['nl','explain','scan','templates'].forEach(function(t) {
+    var el = document.getElementById('formula-tab-' + t);
+    if (el) el.style.display = t === tab ? 'block' : 'none';
+  });
+}
+function generateFromNL() {
+  var input = (document.getElementById('nlInput') || {}).value || '';
+  if (!input) { showToast('请输入描述', 'error'); return; }
+  var formula = formulaNL(input);
+  var el = document.getElementById('nlResult');
+  if (el) el.textContent = formula;
+}
+function copyFormulaResult() {
+  var el = document.getElementById('nlResult');
+  if (!el) return;
+  copyToClip(el.textContent);
+}
+function copyToClip(t) {
+  navigator.clipboard.writeText(t).then(function() { showToast('已复制!', 'success'); }).catch(function() { showToast('复制失败', 'error'); });
+}
+function copyTemplateFormula() {
+  var el = document.getElementById('templateFormulaResult');
+  if (el) copyToClip(el.textContent.replace('点击模板即可复制公式', ''));
+}
+function formulaNL(text) {
+  var rules = [
+    { re: /(如果|若)(.*)大于(\d+)且(.*)包含(.*)就返回(.*)/, fmt: '=IF(AND($1>$3,ISNUMBER(SEARCH("$5",$4))),"$6","")' },
+    { re: /(如果|若)(.*)大于(\d+)就返回(.*)否则返回(.*)/, fmt: '=IF($1>$3,"$4","$5")' },
+    { re: /(如果|若)(.*)大于(\d+)就返回(.*)/, fmt: '=IF($1>$3,"$4","")' },
+    { re: /统计(.*)中大于(\d+)的个数/, fmt: '=COUNTIF($1,">$2")' },
+    { re: /统计(.*)中小于(\d+)的个数/, fmt: '=COUNTIF($1,"<$2")' },
+    { re: /统计(.*)中等于(.*)的个数/, fmt: '=COUNTIF($1,"$2")' },
+    { re: /把(.*)和(.*)用(.*)合并/, fmt: '=TEXTJOIN("$3",TRUE,$1,$2)' },
+    { re: /合并(.*)和(.*)/, fmt: '=$1&$2' },
+    { re: /求(.*)的总和/, fmt: '=SUM($1)' },
+    { re: /求(.*)的平均值/, fmt: '=AVERAGE($1)' },
+    { re: /求(.*)的最大值/, fmt: '=MAX($1)' },
+    { re: /求(.*)的最小值/, fmt: '=MIN($1)' },
+    { re: /查找(.*)对应的(.*)/, fmt: '=XLOOKUP($1,$1,$2)' },
+  ];
+  for (var i = 0; i < rules.length; i++) {
+    var m = text.match(rules[i].re);
+    if (m) return rules[i].fmt.replace(/\$(\d+)/g, function(_, n) { return m[parseInt(n)] || ''; });
+  }
+  return '暂无匹配的公式模式。请尝试用更简单的描述';
+}
+function explainFormula() {
+  var input = (document.getElementById('explainInput') || {}).value || '';
+  if (!input) { showToast('请粘贴公式', 'error'); return; }
+  var el = document.getElementById('explainText');
+  if (el) el.innerHTML = parseFormula(input);
+}
+function formatFormula() {
+  var input = (document.getElementById('explainInput') || {}).value || '';
+  if (!input) return;
+  var fe = document.getElementById('formattedFormula');
+  if (fe) { fe.style.display = 'block'; fe.textContent = input.replace(/\(/g, '(\n  ').replace(/\),/g, '),\n'); }
+}
+function parseFormula(f) {
+  var html = '<div style="margin-bottom:8px;"><strong>原始公式:</strong> <code>' + escHtml(f) + '</code></div>';
+  html += '<div style="margin-bottom:4px;"><strong>运算类型:</strong> ';
+  if (f.includes('IF')) html += '条件判断';
+  else if (f.includes('VLOOKUP')||f.includes('XLOOKUP')) html += '查找匹配';
+  else if (f.includes('SUM')) html += '求和';
+  else if (f.includes('COUNT')) html += '计数';
+  else if (f.includes('AVERAGE')) html += '求平均'; else html += '运算';
+  html += '</div><div style="margin-bottom:4px;"><strong>参数说明:</strong></div>';
+  html += '<div style="font-size:12px;color:#666;line-height:1.8;background:#f8f9fa;padding:8px;border-radius:4px;">';
+  var parts = f.match(/\(([^)]+)\)/);
+  if (parts) {
+    var args = parts[1].split(',').map(function(a,i){ return '<div>参数'+(i+1)+': <code>'+a.trim()+'</code></div>'; }).join('');
+    html += args;
+  }
+  html += '</div></div>';
+  return html;
+}
+function scanFormulas() {
+  if (!workbook) { showToast('请先上传文件', 'error'); return; }
+  var errors = [];
+  sheetNames.forEach(function(name) {
+    var ws = workbook.Sheets[name];
+    if (!ws || !ws['!ref']) return;
+    var range = XLSX.utils.decode_range(ws['!ref']);
+    for (var r = range.s.r; r <= range.e.r; r++) {
+      for (var c = range.s.c; c <= range.e.c; c++) {
+        var addr = XLSX.utils.encode_cell({r:r, c:c});
+        var cell = ws[addr];
+        if (cell && cell.t === 'e') errors.push({sheet: name, cell: addr, error: cell.w || '未知错误'});
+      }
+    }
+  });
+  var el = document.getElementById('scanResults');
+  if (!el) return;
+  if (errors.length === 0) { el.innerHTML = '<div style="color:#10b981;text-align:center;padding:20px;">✅ 未发现公式错误！</div>'; }
+  else {
+    var html = '<div style="color:#ef4444;margin-bottom:8px;">发现 ' + errors.length + ' 个问题:</div><table><tr><th>Sheet</th><th>单元格</th><th>错误</th></tr>';
+    errors.forEach(function(e){ html += '<tr><td>' + e.sheet + '</td><td>' + e.cell + '</td><td style="color:#ef4444;">' + e.error + '</td></tr>'; });
+    html += '</table>';
+    el.innerHTML = html;
+  }
+  showToast('扫描完成! 发现 ' + errors.length + ' 个问题', errors.length > 0 ? 'error' : 'success');
+}
+function useTemplate(name) {
+  var templates = {
+    if_grade: '=IF(A2>=90,"优秀",IF(A2>=60,"及格","不及格"))',
+    vlookup_inv: '=VLOOKUP(A2,单价表!A:B,2,0)',
+    sum_if_month: '=SUMIFS(C:C,A:A,">="&DATE(2024,1,1),A:A,"<="&DATE(2024,1,31))',
+    datediff: '=DATEDIF(A2,TODAY(),"Y")&"年"&DATEDIF(A2,TODAY(),"YM")&"月"',
+    dedup_count: '=SUMPRODUCT(1/COUNTIF(A:A,A:A))',
+    rank_num: '=RANK(A2,$A$2:$A$100)',
+    id_extract: '=MID(A2,7,8)',
+    status_icon: '=IF(A2="是","✅","❌")'
+  };
+  var formula = templates[name] || '';
+  var el = document.getElementById('templateFormulaResult');
+  if (el) el.textContent = formula;
+  if (formula) copyToClip(formula);
+}
+// ===== Download =====
 // ===== 结构调整 (内联版) =====
 function runTransposeData() {
   if (!currentData||!currentData.length) { showToast('\u8bf7\u5148\u4e0a\u4f20\u6587\u4ef6', 'error'); return; }
