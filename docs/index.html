@@ -607,7 +607,34 @@ function esc(s) {
 }
 
 // ===== 清洗功能 (由 cleaner.js 提供) =====\n// ===== Download =====
-function downloadExcel() {
+// ===== 结构调整 (内联版) =====
+function runTransposeData() {
+  if (!currentData||!currentData.length) { showToast('\u8bf7\u5148\u4e0a\u4f20\u6587\u4ef6', 'error'); return; }
+  saveHistory();
+  var cols = Object.keys(currentData[0]);
+  var result = [];
+  result.push({col: '\u5217\u540d', values: cols.join(', ')});
+  cols.forEach(function(c, ci) {
+    var row = {col: c};
+    currentData.forEach(function(d, ri) { row['v'+(ri+1)] = String(d[c]||''); });
+    result.push(row);
+  });
+  currentData = result;
+  renderTable(currentData); updateStats();
+  showToast('\u884c\u5217\u8f6c\u7f6e\u5b8c\u6210!', 'success');
+}
+function runResetIdx() {
+  if (!currentData||!currentData.length) { showToast('\u8bf7\u5148\u4e0a\u4f20\u6587\u4ef6', 'error'); return; }
+  saveHistory();
+  var cols = Object.keys(currentData[0]);
+  currentData = currentData.map(function(row, i) {
+    var r = {idx: i+1};
+    cols.forEach(function(c) { if (c!=='idx') r[c]=row[c]; });
+    return r;
+  });
+  renderTable(currentData); updateStats();
+  showToast('\u7d22\u5f15\u5df2\u91cd\u7f6e!', 'success');
+}function downloadExcel() {
   if (!currentData) { showToast('请先上传文件', 'error'); return; }
   var ws = XLSX.utils.json_to_sheet(currentData);
   var wb = XLSX.utils.book_new();
