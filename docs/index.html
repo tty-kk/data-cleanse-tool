@@ -316,7 +316,7 @@
       </div>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleFile(this.files[0])">
 
-      <div id="dataPanel" class="hidden" style="display:flex;flex-direction:column;gap:12px;">
+      <div id="dataPanel" style="display:flex;flex-direction:column;gap:12px;">
         <div class="info-bar">
           <span class="stat">📊 行数: <strong id="rowCount">0</strong></span>
           <span class="stat">📋 列数: <strong id="colCount">0</strong></span>
@@ -862,5 +862,5 @@ function showToast(msg, type) {
 onFuncChange();
 onVBAChange();
 </script>
-<script src="cleaner.js"></script>\n</body>
+<script src="cleaner.js?v=2"></script>\n</body>
 </html>
