@@ -528,17 +528,40 @@ function handleFile(file) {
   var reader = new FileReader();
   reader.onload = function(e) {
     try {
-      var data = new Uint8Array(e.target.result);
-      workbook = XLSX.read(data, { type: 'array' });
+      var data, ext = file.name.split(".").pop().toLowerCase();
+      if (ext === "csv") {
+        data = e.target.result;
+        workbook = XLSX.read(data, {type:"string", raw:true});
+      } else if (ext === "tsv") {
+        data = e.target.result.replace(/\t/g, ",");
+        workbook = XLSX.read(data, {type:"string", raw:true});
+      } else {
+        data = new Uint8Array(e.target.result);
+        workbook = XLSX.read(data, {type:"array", raw:true});
+      }
       sheetNames = workbook.SheetNames;
-      showToast('已加载: ' + file.name + ' (' + sheetNames.length + ' 个 Sheet)', 'success');
-      document.getElementById('fileStatus').textContent = file.name;
+      if (file.size > 50*1024*1024) {
+        sheetNames.forEach(function(nm) {
+          var ws = workbook.Sheets[nm];
+          if (ws["!ref"]) {
+            var rg = XLSX.utils.decode_range(ws["!ref"]);
+            if (rg.e.r > 9999) {
+              rg.e.r = 9999;
+              ws["!ref"] = XLSX.utils.encode_range(rg);
+            }
+          }
+        });
+        showToast("文件较大(>" + (file.size/1024/1024).toFixed(1) + "MB)，仅加载前10000行", "success");
+      }
+      showToast('已加载: ' + file.name + ' | ' + sheetNames.length + ' 个 Sheet', 'success');
+      document.getElementById("fileStatus").textContent = file.name;
       loadSheet(0);
-    } catch(err) {
-      showToast('文件解析失败: ' + err.message, 'error');
-    }
+    } catch(err) { showToast("文件解析失败: " + err.message, "error"); }
   };
-  reader.readAsArrayBuffer(file);
+  if (["csv","tsv"].indexOf(file.name.split(".").pop().toLowerCase()) >= 0)
+    reader.readAsText(file, "utf-8");
+  else
+    reader.readAsArrayBuffer(file);
 }
 
 function loadSheet(idx) {
@@ -592,82 +615,7 @@ function esc(s) {
   return d.innerHTML;
 }
 
-// ===== Cleaning Operations =====
-function runDedup() {
-  if (!currentData) { showToast('请先上传文件', 'error'); return; }
-  var col = prompt('按哪列去重？（留空按全列）', '');
-  saveHistory();
-  var seen = {};
-  var result = currentData.filter(function(row) {
-    if (col) {
-      var key = String(row[col] || '');
-      if (seen[key]) return false;
-      seen[key] = true;
-      return true;
-    } else {
-      var key = JSON.stringify(row);
-      if (seen[key]) return false;
-      seen[key] = true;
-      return true;
-    }
-  });
-  currentData = result;
-  renderTable(result);
-  document.getElementById('rowCount').textContent = result.length;
-  showToast('去重完成！剩余 ' + result.length + ' 行', 'success');
-}
-
-function runFillNull() {
-  if (!currentData) { showToast('请先上传文件', 'error'); return; }
-  var val = prompt('空值填充为：', '0');
-  if (val === null) return;
-  saveHistory();
-  currentData = currentData.map(function(row) {
-    var r = {};
-    Object.keys(row).forEach(function(k) { r[k] = (row[k] === '' || row[k] === null || row[k] === undefined) ? val : row[k]; });
-    return r;
-  });
-  renderTable(currentData);
-  showToast('空值已填充！', 'success');
-}
-
-function runDropNull() {
-  if (!currentData) { showToast('请先上传文件', 'error'); return; }
-  saveHistory();
-  currentData = currentData.filter(function(row) {
-    for (var k in row) { if (row[k] === '' || row[k] === null || row[k] === undefined) return false; }
-    return true;
-  });
-  renderTable(currentData);
-  document.getElementById('rowCount').textContent = currentData.length;
-  showToast('空行已删除！剩余 ' + currentData.length + ' 行', 'success');
-}
-
-function runTrim() {
-  if (!currentData) { showToast('请先上传文件', 'error'); return; }
-  saveHistory();
-  currentData = currentData.map(function(row) {
-    var r = {};
-    Object.keys(row).forEach(function(k) { r[k] = String(row[k]).trim(); });
-    return r;
-  });
-  renderTable(currentData);
-  showToast('空格已清理！', 'success');
-}
-
-function saveHistory() {
-  history.push(JSON.stringify(currentData));
-}
-
-function undoLast() {
-  if (history.length === 0) { showToast('没有可撤销的操作', 'error'); return; }
-  currentData = JSON.parse(history.pop());
-  renderTable(currentData);
-  document.getElementById('rowCount').textContent = currentData.length;
-  showToast('已撤销', 'success');
-}
-
-// ===== Download =====
+// ===== 清洗功能 (由 cleaner.js 提供) =====\n// ===== Download =====
 function downloadExcel() {
   if (!currentData) { showToast('请先上传文件', 'error'); return; }
   var ws = XLSX.utils.json_to_sheet(currentData);
@@ -923,5 +871,5 @@ function showToast(msg, type) {
 onFuncChange();
 onVBAChange();
 </script>
-</body>
+<script src="cleaner.js"></script>\n</body>
 </html>
