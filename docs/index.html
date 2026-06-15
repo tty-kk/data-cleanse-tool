@@ -316,29 +316,42 @@
       </div>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleFile(this.files[0])">
 
-      <div id="dataPanel" class="hidden" style="display:flex;flex-direction:column;gap:12px;">
-        <div class="info-bar">
-          <span class="stat">📊 行数: <strong id="rowCount">0</strong></span>
-          <span class="stat">📋 列数: <strong id="colCount">0</strong></span>
-          <span class="stat">⬜ 空值: <strong id="nullCount">0</strong></span>
-          <span class="stat">📄 文件: <strong id="fileName"></strong></span>
-        </div>
+      
 
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-          <button class="btn btn-primary btn-sm" onclick="openCleanTool('basic')">🧹 基础清洗</button>
-          <button class="btn btn-primary btn-sm" onclick="openCleanTool('text')">📝 文本处理</button>
-          <button class="btn btn-primary btn-sm" onclick="openCleanTool('duplicate')">🔍 重复值</button>
-          <button class="btn btn-primary btn-sm" onclick="openCleanTool('structure')">📐 结构调整</button>
-          <button class="btn btn-outline btn-sm" onclick="undoLast()">↩ 撤销</button>
-          <button class="btn btn-outline btn-sm" onclick="redoLast()">↪ 重做</button>
-        </div>
-        <div id="cleanToolPanel" style="margin-bottom:8px;"></div>
+<div class="service-bar">
+  <span class="tag">📊 数据清洗</span>
+  <span class="tag">📝 公式编写</span>
+  <span class="tag">⚡ VBA宏</span>
+  <span class="tag">🔗 表格合并</span>
+  <span class="tag">📋 模板定制</span>
+  <span class="tag" style="background:#fef3c7;color:#92400e;">联系微信: 接单中</span>
+</div>
 
-        <div class="btn-group">
-          <button class="btn btn-success" onclick="downloadExcel()">⬇ 下载 Excel</button>
-          <button class="btn btn-success" onclick="downloadCSV()">⬇ 下载 CSV</button>
-          <button class="btn btn-outline" onclick="undoLast()">↩ 撤销</button>
-        </div>
+<div class="app-body">
+  <div class="sidebar">
+    <div class="nav-item active" onclick="switchPage('services')">🏠 服务介绍</div>
+    <div class="nav-item" onclick="switchPage('cleaning')">🧹 数据清洗</div>
+    <div class="nav-item" onclick="switchPage('formula')">📝 公式助手</div>
+    <div class="nav-item" onclick="switchPage('vba')">⚡ VBA生成器</div>
+    <div class="nav-item" onclick="switchPage('merge')">🔗 合并拆分</div>
+    <div class="nav-item" onclick="switchPage('templates')">📋 模板中心</div>
+    <div style="margin-top:auto;padding-top:12px;border-top:1px solid #e0e3e8;">
+      <div class="nav-item" onclick="resetApp()">🔄 重置</div>
+    </div>
+  </div>
+
+  <div class="main-area">
+    <!-- ===== 服务介绍页 ===== -->
+    <div class="page-section active" id="page-services">
+      <div style="font-size:20px;font-weight:700;">Excel 全能助手 · 闲鱼服务</div>
+      <div style="font-size:13px;color:#666;">专业处理各种 Excel 难题，手动几小时的活，几分钟帮你搞定</div>
+
+      <div class="service-card">
+        <div class="icon">📊</div>
+        <div>
+          <h3>数据清洗整理</h3>
+          <p>去重、空值处理、格式统一、乱码修复。上传 Excel 一键预览结果</p>
+          <ul><li>支持 CSV/XLSX/XLS 格式</li><li>去重、空值填充、类型转换</li><li>数据预览后直接下载</li><
 
         <div class="panel">
           <div class="panel-header">数据预览（前100行）</div>
