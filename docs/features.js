@@ -149,7 +149,7 @@ function explainFormulaAdvanced() {
   if (el) el.innerHTML = html;
 }
 
-function escHtml(s) {
+// Override: make formula page use advanced explainer\nfunction explainFormula() { explainFormulaAdvanced(); }\n\nfunction escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
