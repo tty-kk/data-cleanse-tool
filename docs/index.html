@@ -655,28 +655,49 @@ function copyTemplateFormula() {
   var el = document.getElementById('templateFormulaResult');
   if (el) copyToClip(el.textContent.replace('点击模板即可复制公式', ''));
 }
+
 function formulaNL(text) {
+  var t = text.replace(/([A-Za-z])列/g, '$1:$1');
+  t = t.replace(/[“”"']/g, '');
+  t = t.replace(/大于等于/g, '>=');
+  t = t.replace(/小于等于/g, '<=');
+  t = t.replace(/不等于/g, '<>');
+  t = t.replace(/大于/g, '>');
+  t = t.replace(/小于/g, '<');
+  t = t.replace(/等于/g, '=');
+  t = t.replace(/包含/g, 'CONTAINS');
+  t = t.replace(/不包含/g, 'NOT_CONTAINS');
   var rules = [
-    { re: /(如果|若)(.*)大于(\d+)且(.*)包含(.*)就返回(.*)/, fmt: '=IF(AND($1>$3,ISNUMBER(SEARCH("$5",$4))),"$6","")' },
-    { re: /(如果|若)(.*)大于(\d+)就返回(.*)否则返回(.*)/, fmt: '=IF($1>$3,"$4","$5")' },
-    { re: /(如果|若)(.*)大于(\d+)就返回(.*)/, fmt: '=IF($1>$3,"$4","")' },
-    { re: /统计(.*)中大于(\d+)的个数/, fmt: '=COUNTIF($1,">$2")' },
-    { re: /统计(.*)中小于(\d+)的个数/, fmt: '=COUNTIF($1,"<$2")' },
-    { re: /统计(.*)中等于(.*)的个数/, fmt: '=COUNTIF($1,"$2")' },
-    { re: /把(.*)和(.*)用(.*)合并/, fmt: '=TEXTJOIN("$3",TRUE,$1,$2)' },
-    { re: /合并(.*)和(.*)/, fmt: '=$1&$2' },
-    { re: /求(.*)的总和/, fmt: '=SUM($1)' },
-    { re: /求(.*)的平均值/, fmt: '=AVERAGE($1)' },
-    { re: /求(.*)的最大值/, fmt: '=MAX($1)' },
-    { re: /求(.*)的最小值/, fmt: '=MIN($1)' },
-    { re: /查找(.*)对应的(.*)/, fmt: '=XLOOKUP($1,$1,$2)' },
+    {re: /(如果|若)(.*?)([><=]+)(\d+)且(.*?)([><=]+)(\d+)就返回(.+)/, fmt: '=IF(AND($2$3$4,$5$6$7),"$8","")'},
+    {re: /(如果|若)(.*?)([><=]+)(\d+)且(.*?)CONTAINS(.+)就返回(.+)/, fmt: '=IF(AND($2$3$4,ISNUMBER(SEARCH("$6",$5))),"$7","")'},
+    {re: /(如果|若)(.*?)CONTAINS(.+)且(.*?)([><=]+)(\d+)就返回(.+)/, fmt: '=IF(AND(ISNUMBER(SEARCH("$3",$2)),$4$5$6),"$7","")'},
+    {re: /(如果|若)(.*?)([><=]+)(\d+)就返回(.+)否则返回(.+)/, fmt: '=IF($2$3$4,"$5","$6")'},
+    {re: /(如果|若)(.*?)([><=]+)(\d+)就返回(.+)/, fmt: '=IF($2$3$4,"$5","")'},
+    {re: /(如果|若)(.*?)CONTAINS(.+)就返回(.+)否则返回(.+)/, fmt: '=IF(ISNUMBER(SEARCH("$3",$2)),"$4","$5")'},
+    {re: /(如果|若)(.*?)CONTAINS(.+)就返回(.+)/, fmt: '=IF(ISNUMBER(SEARCH("$3",$2)),"$4","")'},
+    {re: /查找(.+)在(.+)中对应的(.+)/, fmt: '=XLOOKUP($1,$2,$3)'},
+    {re: /统计(.+)中([><=]+)(\d+)的个数/, fmt: '=COUNTIF($1,"$2$3")'},
+    {re: /统计(.+)中等于(.+)的个数/, fmt: '=COUNTIF($1,"$2")'},
+    {re: /(.+)去重计数/, fmt: '=SUMPRODUCT(1/COUNTIF($1,$1))'},
+    {re: /求(.+)的总和/, fmt: '=SUM($1)'},
+    {re: /求(.+)的平均值/, fmt: '=AVERAGE($1)'},
+    {re: /求(.+)的最大值/, fmt: '=MAX($1)'},
+    {re: /求(.+)的最小值/, fmt: '=MIN($1)'},
+    {re: /把(.+)和(.+)用(.+)合并/, fmt: '=TEXTJOIN("$3",TRUE,$1,$2)'},
+    {re: /合并(.+)和(.+)/, fmt: '=$1&$2'},
+    {re: /提取(.+)中的第(\d+)位到第(\d+)位/, fmt: '=MID($1,$2,$3-$2+1)'},
+    {re: /计算(.+)到(.+)的天数/, fmt: '=DATEDIF($1,$2,"D")'},
+    {re: /排名(.+)在(.+)中/, fmt: '=RANK($1,$2)'},
   ];
   for (var i = 0; i < rules.length; i++) {
-    var m = text.match(rules[i].re);
-    if (m) return rules[i].fmt.replace(/\$(\d+)/g, function(_, n) { return m[parseInt(n)] || ''; });
+    var m = t.match(rules[i].re);
+    if (m) {
+      return rules[i].fmt.replace(/\$(\d+)/g, function(_, n) { return m[parseInt(n)] || ''; });
+    }
   }
-  return '暂无匹配的公式模式。请尝试用更简单的描述';
+  return '暂无匹配。试试："如果A列大于100且B列包含已完成就返回成功"';
 }
+
 function explainFormula() {
   var input = (document.getElementById('explainInput') || {}).value || '';
   if (!input) { showToast('请粘贴公式', 'error'); return; }
